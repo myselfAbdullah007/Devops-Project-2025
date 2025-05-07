@@ -1,0 +1,34 @@
+# Node modules and environment files
+node_modules/
+.env
+
+# Log files
+*.log
+
+# Build and dist folders
+build/
+dist/
+coverage/
+
+# OS and editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Docker
+*.pid
+.dockerignore
+
+# Kubernetes
+*.tmp.yaml
+*.bak.yaml
+
+# Helm
+**/charts/
+**/Chart.lock
+**/.helmignore
+
+# MongoDB
+data/
+dump/
