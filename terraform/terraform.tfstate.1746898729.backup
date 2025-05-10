@@ -1,7 +1,7 @@
 {
   "version": 4,
   "terraform_version": "1.11.4",
-  "serial": 165,
+  "serial": 164,
   "lineage": "9685af69-7387-8268-c6c7-971b34e7c241",
   "outputs": {
     "cluster_certificate_authority_data": {
@@ -233,6 +233,175 @@
             "module.vpc.aws_vpc.this"
           ],
           "create_before_destroy": true
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "helm_release",
+      "name": "aws_load_balancer_controller",
+      "provider": "provider[\"registry.terraform.io/hashicorp/helm\"]",
+      "instances": [
+        {
+          "schema_version": 1,
+          "attributes": {
+            "atomic": false,
+            "chart": "aws-load-balancer-controller",
+            "cleanup_on_fail": false,
+            "create_namespace": false,
+            "dependency_update": false,
+            "description": null,
+            "devel": null,
+            "disable_crd_hooks": false,
+            "disable_openapi_validation": false,
+            "disable_webhooks": false,
+            "force_update": false,
+            "id": "aws-load-balancer-controller",
+            "keyring": null,
+            "lint": false,
+            "manifest": null,
+            "max_history": 0,
+            "metadata": [
+              {
+                "app_version": "v2.4.6",
+                "chart": "aws-load-balancer-controller",
+                "first_deployed": 1746826233,
+                "last_deployed": 1746826233,
+                "name": "aws-load-balancer-controller",
+                "namespace": "kube-system",
+                "notes": "AWS Load Balancer controller installed!\n",
+                "revision": 1,
+                "values": "{\"clusterName\":\"mern-cluster\",\"region\":\"us-east-1\",\"serviceAccount\":{\"annotations\":{\"eks.amazonaws.com/role-arn\":\"arn:aws:iam::814022331516:role/aws-load-balancer-controller\"}},\"vpcId\":\"vpc-0f77ca925b32e8502\"}",
+                "version": "1.4.7"
+              }
+            ],
+            "name": "aws-load-balancer-controller",
+            "namespace": "kube-system",
+            "pass_credentials": false,
+            "postrender": [],
+            "recreate_pods": false,
+            "render_subchart_notes": true,
+            "replace": false,
+            "repository": "https://aws.github.io/eks-charts",
+            "repository_ca_file": null,
+            "repository_cert_file": null,
+            "repository_key_file": null,
+            "repository_password": null,
+            "repository_username": null,
+            "reset_values": false,
+            "reuse_values": false,
+            "set": [
+              {
+                "name": "clusterName",
+                "type": "",
+                "value": "mern-cluster"
+              },
+              {
+                "name": "region",
+                "type": "",
+                "value": "us-east-1"
+              },
+              {
+                "name": "serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn",
+                "type": "",
+                "value": "arn:aws:iam::814022331516:role/aws-load-balancer-controller"
+              },
+              {
+                "name": "vpcId",
+                "type": "",
+                "value": "vpc-0f77ca925b32e8502"
+              }
+            ],
+            "set_list": [],
+            "set_sensitive": [],
+            "skip_crds": false,
+            "status": "deployed",
+            "timeout": 300,
+            "upgrade_install": null,
+            "values": null,
+            "verify": false,
+            "version": "1.4.7",
+            "wait": true,
+            "wait_for_jobs": false
+          },
+          "sensitive_attributes": [
+            [
+              {
+                "type": "get_attr",
+                "value": "repository_password"
+              }
+            ]
+          ],
+          "private": "eyJzY2hlbWFfdmVyc2lvbiI6IjEifQ==",
+          "dependencies": [
+            "aws_security_group.eks_nodes",
+            "module.aws_load_balancer_controller_irsa.aws_iam_role.this",
+            "module.aws_load_balancer_controller_irsa.data.aws_caller_identity.current",
+            "module.aws_load_balancer_controller_irsa.data.aws_iam_policy_document.this",
+            "module.aws_load_balancer_controller_irsa.data.aws_partition.current",
+            "module.eks.aws_cloudwatch_log_group.this",
+            "module.eks.aws_ec2_tag.cluster_primary_security_group",
+            "module.eks.aws_eks_addon.this",
+            "module.eks.aws_eks_cluster.this",
+            "module.eks.aws_eks_identity_provider_config.this",
+            "module.eks.aws_iam_openid_connect_provider.oidc_provider",
+            "module.eks.aws_iam_policy.cluster_encryption",
+            "module.eks.aws_iam_policy.cni_ipv6_policy",
+            "module.eks.aws_iam_role.this",
+            "module.eks.aws_iam_role_policy_attachment.additional",
+            "module.eks.aws_iam_role_policy_attachment.cluster_encryption",
+            "module.eks.aws_iam_role_policy_attachment.this",
+            "module.eks.aws_security_group.cluster",
+            "module.eks.aws_security_group.node",
+            "module.eks.aws_security_group_rule.cluster",
+            "module.eks.aws_security_group_rule.node",
+            "module.eks.data.aws_caller_identity.current",
+            "module.eks.data.aws_eks_addon_version.this",
+            "module.eks.data.aws_iam_policy_document.assume_role_policy",
+            "module.eks.data.aws_iam_policy_document.cni_ipv6_policy",
+            "module.eks.data.aws_partition.current",
+            "module.eks.data.tls_certificate.this",
+            "module.eks.kubernetes_config_map.aws_auth",
+            "module.eks.kubernetes_config_map_v1_data.aws_auth",
+            "module.eks.module.eks_managed_node_group.aws_eks_node_group.this",
+            "module.eks.module.eks_managed_node_group.aws_iam_role.this",
+            "module.eks.module.eks_managed_node_group.aws_iam_role_policy_attachment.additional",
+            "module.eks.module.eks_managed_node_group.aws_iam_role_policy_attachment.this",
+            "module.eks.module.eks_managed_node_group.aws_launch_template.this",
+            "module.eks.module.eks_managed_node_group.data.aws_caller_identity.current",
+            "module.eks.module.eks_managed_node_group.data.aws_iam_policy_document.assume_role_policy",
+            "module.eks.module.eks_managed_node_group.data.aws_partition.current",
+            "module.eks.module.eks_managed_node_group.module.user_data.data.cloudinit_config.linux_eks_managed_node_group",
+            "module.eks.module.fargate_profile.aws_eks_fargate_profile.this",
+            "module.eks.module.fargate_profile.aws_iam_role.this",
+            "module.eks.module.fargate_profile.aws_iam_role_policy_attachment.additional",
+            "module.eks.module.fargate_profile.aws_iam_role_policy_attachment.this",
+            "module.eks.module.fargate_profile.data.aws_caller_identity.current",
+            "module.eks.module.fargate_profile.data.aws_iam_policy_document.assume_role_policy",
+            "module.eks.module.fargate_profile.data.aws_partition.current",
+            "module.eks.module.kms.aws_kms_alias.this",
+            "module.eks.module.kms.aws_kms_external_key.this",
+            "module.eks.module.kms.aws_kms_grant.this",
+            "module.eks.module.kms.aws_kms_key.this",
+            "module.eks.module.kms.data.aws_caller_identity.current",
+            "module.eks.module.kms.data.aws_iam_policy_document.this",
+            "module.eks.module.kms.data.aws_partition.current",
+            "module.eks.module.self_managed_node_group.aws_autoscaling_group.this",
+            "module.eks.module.self_managed_node_group.aws_autoscaling_schedule.this",
+            "module.eks.module.self_managed_node_group.aws_iam_instance_profile.this",
+            "module.eks.module.self_managed_node_group.aws_iam_role.this",
+            "module.eks.module.self_managed_node_group.aws_iam_role_policy_attachment.additional",
+            "module.eks.module.self_managed_node_group.aws_iam_role_policy_attachment.this",
+            "module.eks.module.self_managed_node_group.aws_launch_template.this",
+            "module.eks.module.self_managed_node_group.data.aws_ami.eks_default",
+            "module.eks.module.self_managed_node_group.data.aws_caller_identity.current",
+            "module.eks.module.self_managed_node_group.data.aws_iam_policy_document.assume_role_policy",
+            "module.eks.module.self_managed_node_group.data.aws_partition.current",
+            "module.eks.module.self_managed_node_group.module.user_data.data.cloudinit_config.linux_eks_managed_node_group",
+            "module.vpc.aws_subnet.private",
+            "module.vpc.aws_vpc.this",
+            "module.vpc.aws_vpc_ipv4_cidr_block_association.this"
+          ]
         }
       ]
     },

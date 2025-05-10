@@ -3,109 +3,47 @@ provider "aws" {
 }
 
 provider "kubernetes" {
+  alias                  = "eks"
   host                   = module.eks.cluster_endpoint
   cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority_data)
   exec {
     api_version = "client.authentication.k8s.io/v1beta1"
     command     = "aws"
-    args        = ["eks", "get-token", "--cluster-name", module.eks.cluster_name]
+    args        = ["eks", "get-token", "--cluster-name", module.eks.cluster_name, "--region", var.aws_region]
   }
 }
 
 provider "helm" {
+  alias = "eks"
   kubernetes {
     host                   = module.eks.cluster_endpoint
     cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority_data)
     exec {
       api_version = "client.authentication.k8s.io/v1beta1"
       command     = "aws"
-      args        = ["eks", "get-token", "--cluster-name", module.eks.cluster_name]
+      args        = ["eks", "get-token", "--cluster-name", module.eks.cluster_name, "--region", var.aws_region]
     }
   }
 }
 
 # VPC and Networking
 module "vpc" {
-  source = "terraform-aws-modules/vpc/aws"
-  version = "5.0.0"
+  source = "./modules/vpc"
 
-  name = "mern-vpc"
-  cidr = "10.0.0.0/16"
-
-  azs             = ["${var.aws_region}a", "${var.aws_region}b"]
-  private_subnets = ["10.0.1.0/24", "10.0.2.0/24"]
-  public_subnets  = ["10.0.101.0/24", "10.0.102.0/24"]
-
-  enable_nat_gateway = true
-  single_nat_gateway = true
-
-  # Enable DNS hostnames and support
-  enable_dns_hostnames = true
-  enable_dns_support   = true
-
-  # Enable flow logs
-  enable_flow_log                      = true
-  create_flow_log_cloudwatch_log_group = true
-  create_flow_log_cloudwatch_iam_role  = true
-
-  # Tags for EKS
-  tags = {
-    Environment = "production"
-    Project     = "mern-stack"
-    "kubernetes.io/cluster/mern-cluster" = "shared"
-  }
-
-  public_subnet_tags = {
-    "kubernetes.io/cluster/mern-cluster" = "shared"
-    "kubernetes.io/role/elb"             = "1"
-  }
-
-  private_subnet_tags = {
-    "kubernetes.io/cluster/mern-cluster" = "shared"
-    "kubernetes.io/role/internal-elb"    = "1"
-  }
+  vpc_cidr             = var.vpc_cidr
+  availability_zones   = var.availability_zones
+  private_subnet_cidrs = var.private_subnet_cidrs
+  public_subnet_cidrs  = var.public_subnet_cidrs
 }
 
 # EKS Cluster
 module "eks" {
-  source  = "terraform-aws-modules/eks/aws"
-  version = "19.0.0"
+  source = "./modules/eks"
 
-  cluster_name    = "mern-cluster"
-  cluster_version = "1.28"
-
-  vpc_id     = module.vpc.vpc_id
-  subnet_ids = module.vpc.private_subnets
-
-  # Enable cluster endpoint access
-  cluster_endpoint_private_access = true
-  cluster_endpoint_public_access  = true
-  cluster_endpoint_public_access_cidrs = ["0.0.0.0/0"]
-
-  # Enable IAM OIDC provider
-  enable_irsa = true
-
-  eks_managed_node_groups = {
-    general = {
-      desired_size = 2
-      min_size     = 1
-      max_size     = 3
-
-      instance_types = ["t3.medium"]
-      capacity_type  = "ON_DEMAND"
-
-      # Enable detailed monitoring
-      enable_monitoring = true
-
-      # Add security group rules
-      vpc_security_group_ids = [aws_security_group.eks_nodes.id]
-    }
-  }
-
-  tags = {
-    Environment = "production"
-    Project     = "mern-stack"
-  }
+  cluster_name    = var.cluster_name
+  cluster_version = var.cluster_version
+  vpc_id          = module.vpc.vpc_id
+  subnet_ids      = concat(module.vpc.private_subnets, module.vpc.public_subnets)
 }
 
 # Get current AWS account ID and user ARN
@@ -161,6 +99,7 @@ module "aws_load_balancer_controller_irsa" {
 
 # Install AWS Load Balancer Controller using Helm
 resource "helm_release" "aws_load_balancer_controller" {
+  provider = helm.eks
   name       = "aws-load-balancer-controller"
   repository = "https://aws.github.io/eks-charts"
   chart      = "aws-load-balancer-controller"
@@ -187,7 +126,22 @@ resource "helm_release" "aws_load_balancer_controller" {
     value = module.vpc.vpc_id
   }
 
-  depends_on = [module.eks]
+  timeout = 600
+  wait    = true
+
+  depends_on = [
+    module.eks,
+    module.aws_load_balancer_controller_irsa,
+    kubernetes_namespace.kube_system
+  ]
+}
+
+# Create kube-system namespace if it doesn't exist
+resource "kubernetes_namespace" "kube_system" {
+  provider = kubernetes.eks
+  metadata {
+    name = "kube-system"
+  }
 }
 
 # Create IAM role for EKS admin
@@ -221,6 +175,7 @@ resource "aws_iam_role_policy_attachment" "eks_admin_service" {
 
 # Create MongoDB deployment
 resource "kubernetes_deployment" "mongodb" {
+  provider = kubernetes.eks
   metadata {
     name = "mongodb"
     labels = {
@@ -270,6 +225,7 @@ resource "kubernetes_deployment" "mongodb" {
 
 # Create MongoDB service
 resource "kubernetes_service" "mongodb" {
+  provider = kubernetes.eks
   metadata {
     name = "mongodb"
   }
@@ -288,6 +244,7 @@ resource "kubernetes_service" "mongodb" {
 
 # Create Backend deployment
 resource "kubernetes_deployment" "backend" {
+  provider = kubernetes.eks
   metadata {
     name = "backend"
   }
@@ -373,6 +330,7 @@ resource "kubernetes_deployment" "backend" {
 
 # Create Backend service
 resource "kubernetes_service" "backend" {
+  provider = kubernetes.eks
   metadata {
     name = "backend"
   }
@@ -390,6 +348,7 @@ resource "kubernetes_service" "backend" {
 
 # Create Frontend deployment
 resource "kubernetes_deployment" "frontend" {
+  provider = kubernetes.eks
   metadata {
     name = "frontend"
   }
@@ -502,6 +461,7 @@ resource "kubernetes_deployment" "frontend" {
 
 # Create frontend service
 resource "kubernetes_service" "frontend" {
+  provider = kubernetes.eks
   metadata {
     name = "frontend"
   }
@@ -522,6 +482,7 @@ resource "kubernetes_service" "frontend" {
 
 # Create Ingress
 resource "kubernetes_ingress_v1" "app_ingress" {
+  provider = kubernetes.eks
   metadata {
     name = "app-ingress"
     annotations = {
@@ -620,4 +581,10 @@ resource "kubernetes_ingress_v1" "app_ingress" {
       }
     }
   }
+}
+
+module "kubernetes" {
+  source = "./modules/kubernetes"
+
+  depends_on = [module.eks]
 } 
