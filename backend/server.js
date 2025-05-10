@@ -17,6 +17,11 @@ app.use(cors({
 // Middleware
 app.use(express.json());
 
+// Health Check Endpoint
+app.get('/api/health', (req, res) => {
+  res.status(200).json({ status: 'ok', message: 'Server is healthy' });
+});
+
 // MongoDB Connection
 mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/mern-crud')
   .then(() => console.log('MongoDB Connected'))
