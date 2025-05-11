@@ -58,3 +58,4 @@ crash.log
 
 # Ignore plan output
 *.tfplan
+.terraform/
