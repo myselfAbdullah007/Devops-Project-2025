@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { User } from '@/types/user';
 import UserForm from '@/components/UserForm';
+import { trackPageView, trackUserInteraction } from '../utils/telemetry';
 
 const API_BASE_URL = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001'}/api`;
 
@@ -47,6 +48,7 @@ export default function Home() {
   useEffect(() => {
     console.log('API Base URL:', API_BASE_URL);
     fetchUsers();
+    trackPageView('home');
   }, []);
 
   const handleCreateUser = async (userData: Partial<User>) => {
@@ -125,6 +127,13 @@ export default function Home() {
       console.error('Error deleting user:', error);
       setError(error instanceof Error ? error.message : 'Failed to delete user. Please try again.');
     }
+  };
+
+  const handleButtonClick = () => {
+    trackUserInteraction('button-click', {
+      buttonId: 'main-button',
+      timestamp: new Date().toISOString()
+    });
   };
 
   if (isLoading) {
