@@ -14,7 +14,7 @@ data:
       username: admin
       groups:
         - system:masters
-  mapUsers: |
+  mapUsers: | 
     - userarn: arn:aws:iam::814022331516:user/cli-user
       username: admin
       groups:
