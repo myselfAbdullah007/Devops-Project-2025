@@ -1,6 +1,17 @@
+# Create kube-system namespace if it doesn't exist
+resource "kubernetes_namespace" "kube_system" {
+  metadata {
+    name = "kube-system"
+  }
+}
+
+# Create MongoDB deployment
 resource "kubernetes_deployment" "mongodb" {
   metadata {
     name = "mongodb"
+    labels = {
+      app = "mongodb"
+    }
   }
 
   spec {
@@ -18,12 +29,10 @@ resource "kubernetes_deployment" "mongodb" {
           app = "mongodb"
         }
       }
-
       spec {
         container {
           image = "mongo:latest"
           name  = "mongodb"
-
           port {
             container_port = 27017
           }
@@ -54,6 +63,7 @@ resource "kubernetes_deployment" "mongodb" {
   }
 }
 
+# Create MongoDB service
 resource "kubernetes_service" "mongodb" {
   metadata {
     name = "mongodb"
@@ -71,6 +81,7 @@ resource "kubernetes_service" "mongodb" {
   }
 }
 
+# Create Backend deployment
 resource "kubernetes_deployment" "backend" {
   metadata {
     name = "backend"
@@ -144,12 +155,25 @@ resource "kubernetes_deployment" "backend" {
             timeout_seconds      = 1
             failure_threshold    = 3
           }
+
+          readiness_probe {
+            http_get {
+              path = "/api/health"
+              port = 5001
+            }
+
+            initial_delay_seconds = 5
+            period_seconds       = 5
+            timeout_seconds      = 1
+            failure_threshold    = 3
+          }
         }
       }
     }
   }
 }
 
+# Create Backend service
 resource "kubernetes_service" "backend" {
   metadata {
     name = "backend"
@@ -163,10 +187,12 @@ resource "kubernetes_service" "backend" {
     port {
       port        = 80
       target_port = 5001
+      protocol    = "TCP"
     }
   }
 }
 
+# Create Frontend deployment
 resource "kubernetes_deployment" "frontend" {
   metadata {
     name = "frontend"
@@ -260,12 +286,25 @@ resource "kubernetes_deployment" "frontend" {
             timeout_seconds      = 1
             failure_threshold    = 3
           }
+
+          readiness_probe {
+            http_get {
+              path = "/"
+              port = 3000
+            }
+
+            initial_delay_seconds = 5
+            period_seconds       = 5
+            timeout_seconds      = 1
+            failure_threshold    = 3
+          }
         }
       }
     }
   }
 }
 
+# Create frontend service
 resource "kubernetes_service" "frontend" {
   metadata {
     name = "frontend"
@@ -280,21 +319,25 @@ resource "kubernetes_service" "frontend" {
       port        = 80
       target_port = 3000
     }
+
+    type = "ClusterIP"
   }
 }
 
+# Create Ingress
 resource "kubernetes_ingress_v1" "app_ingress" {
   metadata {
     name = "app-ingress"
     annotations = {
-      "kubernetes.io/ingress.class" = "alb"
-      "alb.ingress.kubernetes.io/scheme" = "internet-facing"
-      "alb.ingress.kubernetes.io/target-type" = "ip"
-      "alb.ingress.kubernetes.io/listen-ports" = jsonencode([
-        {
-          HTTP = 80
-        }
-      ])
+      "kubernetes.io/ingress.class"                = "alb"
+      "alb.ingress.kubernetes.io/scheme"          = "internet-facing"
+      "alb.ingress.kubernetes.io/target-type"     = "ip"
+      "alb.ingress.kubernetes.io/backend-protocol" = "HTTP"
+      "alb.ingress.kubernetes.io/group.name"      = "mern-app"
+      "alb.ingress.kubernetes.io/healthcheck-path" = "/"
+      "alb.ingress.kubernetes.io/success-codes"   = "200-399"
+      "alb.ingress.kubernetes.io/listen-ports"    = jsonencode([{ HTTP = 80 }])
+      "alb.ingress.kubernetes.io/load-balancer-attributes" = "routing.http.drop_invalid_header_fields.enabled=true"
     }
   }
 
