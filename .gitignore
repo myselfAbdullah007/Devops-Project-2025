@@ -32,3 +32,29 @@ Thumbs.db
 # MongoDB
 data/
 dump/
+# Ignore Terraform's local dependency directories
+.terraform/
+
+# Optional: Ignore Terraform lock and plan files
+.terraform.lock.hcl
+*.tfplan
+*.tfstate
+*.tfstate.backup
+*.tfvars
+crash.log
+# Ignore Terraform state files and backups
+*.tfstate
+*.tfstate.backup
+
+# Ignore Terraform variable files (optional, if containing secrets)
+*.tfvars
+
+# Ignore local Terraform directories and provider binaries
+.terraform/
+.terraform.lock.hcl
+
+# Ignore crash logs
+crash.log
+
+# Ignore plan output
+*.tfplan
