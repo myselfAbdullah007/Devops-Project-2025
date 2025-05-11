@@ -107,7 +107,6 @@ resource "kubernetes_deployment" "backend" {
         container {
           image = "myselfabii/mern-backend:latest"
           name  = "backend"
-          image_pull_policy = "Always"
 
           port {
             container_port = 5001
@@ -131,6 +130,36 @@ resource "kubernetes_deployment" "backend" {
           env {
             name  = "CORS_ORIGIN"
             value = "*"
+          }
+
+          env {
+            name  = "CORS_METHODS"
+            value = "GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS"
+          }
+
+          env {
+            name  = "CORS_CREDENTIALS"
+            value = "true"
+          }
+
+          env {
+            name  = "CORS_ALLOWED_HEADERS"
+            value = "Content-Type,Authorization,X-Requested-With,Accept,Origin"
+          }
+
+          env {
+            name  = "CORS_EXPOSED_HEADERS"
+            value = "Content-Range,X-Content-Range"
+          }
+
+          env {
+            name  = "CORS_MAX_AGE"
+            value = "86400"
+          }
+
+          env {
+            name  = "CORS_PREFLIGHT_CONTINUE"
+            value = "false"
           }
 
           resources {
@@ -187,7 +216,6 @@ resource "kubernetes_service" "backend" {
     port {
       port        = 80
       target_port = 5001
-      protocol    = "TCP"
     }
   }
 }
@@ -218,7 +246,6 @@ resource "kubernetes_deployment" "frontend" {
         container {
           image = "myselfabii/mern-frontend:latest"
           name  = "frontend"
-          image_pull_policy = "Always"
 
           port {
             container_port = 3000
@@ -226,7 +253,7 @@ resource "kubernetes_deployment" "frontend" {
 
           env {
             name  = "NEXT_PUBLIC_API_URL"
-            value = "/api"
+            value = "http://k8s-mernapp-10da5b7777-954776261.us-east-1.elb.amazonaws.com/api"
           }
 
           env {
@@ -335,9 +362,9 @@ resource "kubernetes_ingress_v1" "app_ingress" {
       "alb.ingress.kubernetes.io/backend-protocol" = "HTTP"
       "alb.ingress.kubernetes.io/group.name"      = "mern-app"
       "alb.ingress.kubernetes.io/healthcheck-path" = "/"
-      "alb.ingress.kubernetes.io/success-codes"   = "200-399"
-      "alb.ingress.kubernetes.io/listen-ports"    = jsonencode([{ HTTP = 80 }])
+      "alb.ingress.kubernetes.io/listen-ports"    = "[{\"HTTP\": 80}]"
       "alb.ingress.kubernetes.io/load-balancer-attributes" = "routing.http.drop_invalid_header_fields.enabled=true"
+      "alb.ingress.kubernetes.io/success-codes"   = "200-399"
     }
   }
 

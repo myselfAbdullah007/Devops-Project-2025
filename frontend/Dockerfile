@@ -11,7 +11,7 @@ COPY . .
 # Set environment variables for build
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
-ENV NEXT_PUBLIC_API_URL=http://k8s-mernapp-10da5b7777-954776261.us-east-1.elb.amazonaws.com
+ENV NEXT_PUBLIC_API_URL=http://k8s-mernapp-10da5b7777-1952596348.us-east-1.elb.amazonaws.com/
 
 RUN npm run build
 

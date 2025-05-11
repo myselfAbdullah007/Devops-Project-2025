@@ -29,7 +29,7 @@ spec:
       serviceAccountName: aws-load-balancer-controller
       containers:
         - name: aws-load-balancer-controller
-          image: amazon/aws-load-balancer-controller:v2.4.7
+          image: public.ecr.aws/eks/aws-load-balancer-controller:v2.4.7
           args:
             - --cluster-name=mern-cluster
             - --aws-region=us-east-1
