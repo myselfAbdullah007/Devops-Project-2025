@@ -190,30 +190,4 @@ cd terraform
 terraform destroy
 ```
 
-## Security Considerations
 
-1. **Secrets Management**
-   - Use Kubernetes secrets for sensitive data
-   - Never commit sensitive information to version control
-
-2. **Network Security**
-   - Use private subnets for worker nodes
-   - Configure security groups appropriately
-   - Enable VPC flow logs for monitoring
-
-3. **IAM Best Practices**
-   - Follow principle of least privilege
-   - Use IAM roles for service accounts
-   - Regularly rotate access keys
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Commit your changes
-4. Push to the branch
-5. Create a Pull Request
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
