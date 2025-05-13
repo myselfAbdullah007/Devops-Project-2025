@@ -11,14 +11,47 @@ services:
       - "4318:4318"   # OTLP HTTP receiver
       - "8888:8888"   # Prometheus metrics exposed by the collector
       - "8889:8889"   # Prometheus exporter metrics
+      - "55678:55678" # OpenTelemetry receiver
+      - "55679:55679" # OpenTelemetry receiver
     networks:
       - app-network
+
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./prometheus:/etc/prometheus
+    ports:
+      - "9090:9090"
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+    networks:
+      - app-network
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning
+      - grafana-storage:/var/lib/grafana
+    networks:
+      - app-network
+    depends_on:
+      - prometheus
 
   jaeger:
     image: jaegertracing/all-in-one:latest
     ports:
-      - "16686:16686"  # Jaeger UI
-      - "14250:14250"  # (gRPC model ingestion)
+      - "16686:16686"  # UI
+      - "14250:14250"  # Model
+      - "14268:14268"  # Model
+      - "14317:4317"   # OTLP gRPC
+      - "14318:4318"   # OTLP HTTP
+      - "9411:9411"    # Zipkin
     environment:
       - COLLECTOR_OTLP_ENABLED=true
     networks:
@@ -28,9 +61,6 @@ services:
     image: mongo:latest
     ports:
       - "27017:27017"
-    environment:
-      - MONGO_INITDB_ROOT_USERNAME=root
-      - MONGO_INITDB_ROOT_PASSWORD=example
     volumes:
       - mongodb_data:/data/db
     networks:
@@ -41,13 +71,8 @@ services:
     ports:
       - "5001:5001"
     environment:
-      - MONGODB_URI=mongodb://root:example@mongodb:27017/mern-crud?authSource=admin
-      - PORT=5001
-      - NODE_ENV=development
+      - MONGODB_URI=mongodb://mongodb:27017/mern-app
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
-    volumes:
-      - ./backend:/app
-      - /app/node_modules
     depends_on:
       - mongodb
       - otel-collector
@@ -59,19 +84,16 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - NEXT_PUBLIC_API_URL=http://localhost:5001
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
-      - /app/.next
+      - REACT_APP_API_URL=http://localhost:5001
     depends_on:
       - backend
     networks:
       - app-network
 
-volumes:
-  mongodb_data:
-
 networks:
   app-network:
     driver: bridge
+
+volumes:
+  mongodb_data:
+  grafana-storage:

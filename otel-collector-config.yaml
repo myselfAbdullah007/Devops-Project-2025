@@ -5,6 +5,13 @@ receivers:
         endpoint: 0.0.0.0:4318
       grpc:
         endpoint: 0.0.0.0:4317
+  prometheus:
+    config:
+      scrape_configs:
+        - job_name: 'otel-collector'
+          scrape_interval: 10s
+          static_configs:
+            - targets: ['localhost:8889']
 
 processors:
   batch:
@@ -24,6 +31,8 @@ exporters:
     verbosity: detailed
     sampling_initial: 1
     sampling_thereafter: 1
+  prometheus:
+    endpoint: "0.0.0.0:8889"
 
 service:
   pipelines:
@@ -32,6 +41,6 @@ service:
       processors: [memory_limiter, batch]
       exporters: [otlp, debug]
     metrics:
-      receivers: [otlp]
+      receivers: [otlp, prometheus]
       processors: [memory_limiter, batch]
-      exporters: [debug]
+      exporters: [prometheus, debug]

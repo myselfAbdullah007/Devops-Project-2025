@@ -1,13 +1,16 @@
 # OpenTelemetry Setup Guide
 
-This document explains how OpenTelemetry is set up in our MERN stack application for distributed tracing.
+This document explains how OpenTelemetry is set up in our MERN stack application for distributed tracing and monitoring.
 
 ## Architecture Overview
 
-Our application uses the following components for distributed tracing:
+Our application uses the following components:
 - OpenTelemetry Collector (for receiving and processing traces)
 - Jaeger (for trace visualization and analysis)
 - Node.js OpenTelemetry SDK (for instrumenting our backend)
+- Prometheus (for metrics collection)
+- Grafana (for metrics visualization)
+
 
 
 ## Components
@@ -17,6 +20,7 @@ The collector acts as a central hub for receiving, processing, and exporting tra
 - Receive traces via gRPC (port 4317) and HTTP (port 4318)
 - Process traces using batch and memory limiter processors
 - Export traces to Jaeger
+- Expose metrics for Prometheus (port 8888)
 
 Configuration (`otel-collector-config.yaml`):
 ```yaml
@@ -53,11 +57,48 @@ service:
       exporters: [otlp, debug]
 ```
 
-### 2. Backend Instrumentation
+### 2. Prometheus
+Prometheus is used for metrics collection and storage. It's configured to scrape metrics from:
+- OpenTelemetry Collector
+- Backend service
+- Prometheus itself
+
+Configuration (`prometheus.yml`):
+```yaml
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: 'otel-collector'
+    static_configs:
+      - targets: ['otel-collector:8888']
+
+  - job_name: 'backend'
+    static_configs:
+      - targets: ['backend:5001']
+
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+```
+
+### 3. Grafana
+Grafana provides visualization for metrics collected by Prometheus. Features include:
+- Pre-configured Prometheus data source
+- Custom dashboard for application metrics
+- Real-time monitoring of:
+  - HTTP request rates
+  - Response times
+  - Error rates
+  - Resource usage
+
+### 4. Backend Instrumentation
 Our Node.js backend is instrumented using the OpenTelemetry SDK. Key features:
 - Automatic instrumentation for HTTP, Express, and MongoDB
 - Custom spans for API endpoints and database operations
 - gRPC exporter for sending traces to the collector
+- Metrics exposed for Prometheus scraping
 
 Configuration (`backend/src/utils/telemetry.ts`):
 ```typescript
@@ -76,7 +117,7 @@ export function setupTelemetry() {
 }
 ```
 
-### 3. Docker Compose Setup
+### 5. Docker Compose Setup
 All services are connected through a Docker network for proper communication:
 
 ```yaml
@@ -86,13 +127,21 @@ services:
     ports:
       - "4317:4317"   # OTLP gRPC
       - "4318:4318"   # OTLP HTTP
+      - "8888:8888"   # Prometheus metrics
     networks:
       - app-network
 
-  jaeger:
-    image: jaegertracing/all-in-one:latest
+  prometheus:
+    image: prom/prometheus:latest
     ports:
-      - "16686:16686"  # Jaeger UI
+      - "9090:9090"
+    networks:
+      - app-network
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3001:3000"
     networks:
       - app-network
 
@@ -110,17 +159,29 @@ services:
    docker-compose up --build
    ```
 
-2. Access the Jaeger UI:
-   - Open http://localhost:16686 in your browser
-   - Select "backend-service" from the service dropdown
-   - Click "Find Traces"
+2. Access the monitoring tools:
+   - Jaeger UI: http://localhost:16686
+   - Prometheus: http://localhost:9090
+   - Grafana: http://localhost:3001 (admin/admin)
 
-3. Make requests to your backend API to generate traces
+3. In Grafana:
+   - Log in with admin/admin
+   - Navigate to Dashboards
+   - Open the "Application Dashboard"
+   - Configure panels to show:
+     - HTTP request rates
+     - Response times
+     - Error rates
+     - Resource usage
 
-### Jaeger UI Example
-![Ope](Screenshots/opentelemetry1.png)
+4. Make requests to your backend API to generate traces and metrics
+
+### Jaeger UI
 ![Jaeger UI](Screenshots/opentelemetry2.png)
 
+![OpenTelemetry Architecture](Screenshots/opentelemetry1.png)
+### Graphana Dashboard
+![OpenTelemetry Architecture](Screenshots/Graphana.png)
 ## Custom Tracing
 
 We've implemented custom tracing for:
@@ -145,24 +206,34 @@ export function trackApiEndpoint(method: string, path: string, status: number) {
 
 ## Dependencies
 
-Key OpenTelemetry packages used:
-- `@opentelemetry/api`
-- `@opentelemetry/sdk-node`
-- `@opentelemetry/auto-instrumentations-node`
-- `@opentelemetry/exporter-trace-otlp-grpc`
-- `@opentelemetry/resources`
-- `@opentelemetry/semantic-conventions`
+Key packages used:
+- OpenTelemetry:
+  - `@opentelemetry/api`
+  - `@opentelemetry/sdk-node`
+  - `@opentelemetry/auto-instrumentations-node`
+  - `@opentelemetry/exporter-trace-otlp-grpc`
+  - `@opentelemetry/resources`
+  - `@opentelemetry/semantic-conventions`
+- Monitoring:
+  - Prometheus
+  - Grafana
 
 ## Troubleshooting
 
 1. If traces aren't appearing in Jaeger:
-   - Check if the backend is connected to the collector (logs should show "Backend telemetry initialized")
-   - Verify the collector is receiving traces (check collector logs)
+   - Check if the backend is connected to the collector
+   - Verify the collector is receiving traces
    - Ensure all services are on the same Docker network
 
-2. Common issues:
+2. If metrics aren't appearing in Grafana:
+   - Check Prometheus targets (http://localhost:9090/targets)
+   - Verify metrics endpoints are accessible
+   - Check Grafana data source configuration
+
+3. Common issues:
    - Network connectivity between services
    - Incorrect endpoint URLs
    - Missing environment variables
-   - Version mismatches between OpenTelemetry packages
+   - Version mismatches between packages
+
 
